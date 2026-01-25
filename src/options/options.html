@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <h1>GitHub PR Review Tracker Settings</h1>
+
+  <label for="token">Personal Access Token</label>
+  <input type="password" id="token" placeholder="ghp_xxxxxxxxxxxx">
+
+  <div class="field-group">
+    <label for="maxAge">Max PR Age (days)</label>
+    <input type="number" id="maxAge" min="1" max="365" value="30">
+  </div>
+
+  <label class="checkbox-label">
+    <input type="checkbox" id="showOthersDrafts">
+    Show draft PRs from others
+  </label>
+
+  <button id="save">Save Settings</button>
+
+  <div id="status" class="status"></div>
+
+  <p class="hint">
+    Create a token at <a href="https://github.com/settings/tokens" target="_blank">GitHub Settings</a>
+    with <code>repo</code> scope.
+  </p>
+
+  <script type="module" src="options.js"></script>
+</body>
+</html>

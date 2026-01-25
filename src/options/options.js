@@ -1,5 +1,12 @@
+import { DEFAULT_MAX_AGE_DAYS } from '../shared/constants.js';
+
 document.addEventListener('DOMContentLoaded', async () => {
-  const { githubToken, maxAgeDays = 30, showOthersDrafts = false } = await chrome.storage.local.get(['githubToken', 'maxAgeDays', 'showOthersDrafts']);
+  const {
+    githubToken,
+    maxAgeDays = DEFAULT_MAX_AGE_DAYS,
+    showOthersDrafts = false
+  } = await chrome.storage.local.get(['githubToken', 'maxAgeDays', 'showOthersDrafts']);
+
   if (githubToken) {
     document.getElementById('token').value = githubToken;
   }
@@ -9,7 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 document.getElementById('save').addEventListener('click', async () => {
   const token = document.getElementById('token').value.trim();
-  const maxAge = parseInt(document.getElementById('maxAge').value, 10) || 30;
+  const maxAge = parseInt(document.getElementById('maxAge').value, 10) || DEFAULT_MAX_AGE_DAYS;
   const showOthersDrafts = document.getElementById('showOthersDrafts').checked;
 
   if (!token) {
@@ -29,7 +36,11 @@ document.getElementById('save').addEventListener('click', async () => {
       throw new Error('Invalid token');
     }
 
-    await chrome.storage.local.set({ githubToken: token, maxAgeDays: maxAge, showOthersDrafts });
+    await chrome.storage.local.set({
+      githubToken: token,
+      maxAgeDays: maxAge,
+      showOthersDrafts
+    });
     chrome.runtime.sendMessage({ action: 'checkNow' });
     showStatus('Settings saved successfully!', 'success');
   } catch (error) {
