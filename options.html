@@ -78,6 +78,11 @@
   <label for="maxAge" style="margin-top: 16px;">Max PR Age (days)</label>
   <input type="number" id="maxAge" min="1" max="365" value="30">
 
+  <label style="margin-top: 16px; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+    <input type="checkbox" id="showOthersDrafts">
+    Show draft PRs from others
+  </label>
+
   <button id="save">Save Settings</button>
 
   <div id="status" class="status" style="display: none;"></div>

@@ -31,7 +31,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     </div>
     <div class="actions">
       <button id="refresh">Refresh</button>
-      <button id="clearSeen">Re-add All</button>
       <button id="options">Settings</button>
     </div>
     <div class="last-check">Last checked: ${lastCheckTime}</div>
@@ -39,11 +38,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('refresh').addEventListener('click', async () => {
     await chrome.runtime.sendMessage({ action: 'checkNow' });
-    window.close();
-  });
-
-  document.getElementById('clearSeen').addEventListener('click', async () => {
-    await chrome.runtime.sendMessage({ action: 'clearSeen' });
     window.close();
   });
 

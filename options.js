@@ -1,14 +1,16 @@
 document.addEventListener('DOMContentLoaded', async () => {
-  const { githubToken, maxAgeDays = 30 } = await chrome.storage.local.get(['githubToken', 'maxAgeDays']);
+  const { githubToken, maxAgeDays = 30, showOthersDrafts = false } = await chrome.storage.local.get(['githubToken', 'maxAgeDays', 'showOthersDrafts']);
   if (githubToken) {
     document.getElementById('token').value = githubToken;
   }
   document.getElementById('maxAge').value = maxAgeDays;
+  document.getElementById('showOthersDrafts').checked = showOthersDrafts;
 });
 
 document.getElementById('save').addEventListener('click', async () => {
   const token = document.getElementById('token').value.trim();
   const maxAge = parseInt(document.getElementById('maxAge').value, 10) || 30;
+  const showOthersDrafts = document.getElementById('showOthersDrafts').checked;
 
   if (!token) {
     showStatus('Please enter a token', 'error');
@@ -27,7 +29,7 @@ document.getElementById('save').addEventListener('click', async () => {
       throw new Error('Invalid token');
     }
 
-    await chrome.storage.local.set({ githubToken: token, maxAgeDays: maxAge });
+    await chrome.storage.local.set({ githubToken: token, maxAgeDays: maxAge, showOthersDrafts });
     chrome.runtime.sendMessage({ action: 'checkNow' });
     showStatus('Settings saved successfully!', 'success');
   } catch (error) {
