@@ -27,7 +27,7 @@ export async function closeMergedPRTabs(openPRUrls) {
 
     const tabs = await chrome.tabs.query({ groupId: groups[0].id });
     const tabsToClose = tabs.filter(tab => {
-      if (!tab.url) return false;
+      if (!tab.url || tab.active) return false;
       return !openUrlSet.has(normalizeUrl(tab.url));
     });
 
