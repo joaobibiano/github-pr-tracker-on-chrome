@@ -8,7 +8,7 @@ import {
 } from '../shared/constants.js';
 import { getSettings, saveCurrentPRs } from './storage.js';
 import { fetchAllPRs } from './github-api.js';
-import { getOpenPRUrls, addPRsToTabGroup } from './tab-manager.js';
+import { getOpenPRUrls, addPRsToTabGroup, closeMergedPRTabs } from './tab-manager.js';
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.alarms.create(ALARM_NAME, { periodInMinutes: POLL_INTERVAL_MINUTES });
@@ -46,6 +46,9 @@ async function checkForPRs() {
 
     const filteredMyPRs = myPRs.filter(pr => new Date(pr.created_at).getTime() > cutoff);
     const filteredReviews = reviewRequests.filter(pr => new Date(pr.created_at).getTime() > cutoff);
+
+    const allOpenPRUrls = [...filteredMyPRs, ...filteredReviews].map(pr => pr.html_url);
+    await closeMergedPRTabs(allOpenPRUrls);
 
     const openUrls = await getOpenPRUrls();
 
