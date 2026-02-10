@@ -4,17 +4,13 @@ import { normalizeUrl } from '../shared/utils.js';
 export async function getOpenPRUrls() {
   const urls = new Set();
 
-  for (const groupName of [GROUP_MY_PRS, GROUP_REVIEW_REQUESTS]) {
-    const groups = await chrome.tabGroups.query({ title: groupName });
-    if (groups.length === 0) continue;
-
-    const tabs = await chrome.tabs.query({ groupId: groups[0].id });
-    for (const tab of tabs) {
-      if (tab.url) {
-        urls.add(normalizeUrl(tab.url));
-      }
+  const allTabs = await chrome.tabs.query({ url: 'https://github.com/*/*/pull/*' });
+  for (const tab of allTabs) {
+    if (tab.url) {
+      urls.add(normalizeUrl(tab.url));
     }
   }
+
   return urls;
 }
 
