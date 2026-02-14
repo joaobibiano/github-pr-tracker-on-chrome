@@ -8,5 +8,12 @@ export function formatTimeAgo(timestamp) {
 }
 
 export function normalizeUrl(url) {
-  return url.split('?')[0].split('#')[0];
+  const withoutQueryOrHash = url.split('?')[0].split('#')[0];
+
+  const pullRequestMatch = withoutQueryOrHash.match(/^https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/\d+/);
+  if (pullRequestMatch) {
+    return pullRequestMatch[0];
+  }
+
+  return withoutQueryOrHash;
 }

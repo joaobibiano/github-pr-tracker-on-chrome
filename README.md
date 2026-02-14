@@ -79,6 +79,12 @@ github-pr-reviewer-extension/
 
 No build step required! The extension uses vanilla JavaScript with ES modules.
 
+Run the regression check for PR URL normalization when touching tab dedupe logic:
+
+```bash
+node test-normalize-url.js
+```
+
 1. Make changes to files in `src/`
 2. Go to `chrome://extensions`
 3. Click the refresh icon on the extension card
