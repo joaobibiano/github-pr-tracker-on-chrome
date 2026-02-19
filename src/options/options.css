@@ -88,3 +88,46 @@ button:hover {
 .field-group {
   margin-top: 16px;
 }
+
+.repo-filter-section {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #ddd;
+}
+
+.repo-filter-section h2 {
+  font-size: 15px;
+  margin: 0 0 8px;
+  color: #333;
+}
+
+.repo-filter-hint {
+  font-size: 12px;
+  color: #666;
+  margin: 0 0 12px;
+}
+
+.repo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.repo-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #333;
+}
+
+.repo-item input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.repo-item .repo-name {
+  font-family: SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 12px;
+}

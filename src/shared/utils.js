@@ -7,6 +7,11 @@ export function formatTimeAgo(timestamp) {
   return `${Math.floor(seconds / 86400)}d ago`;
 }
 
+export function getRepoFullName(prUrl) {
+  const match = prUrl.match(/^https:\/\/github\.com\/([^/]+\/[^/]+)\//);
+  return match ? match[1] : null;
+}
+
 export function normalizeUrl(url) {
   const withoutQueryOrHash = url.split('?')[0].split('#')[0];
 

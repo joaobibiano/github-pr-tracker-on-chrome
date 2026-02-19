@@ -6,9 +6,10 @@ import {
   GROUP_COLORS,
   BADGE_COLORS
 } from '../shared/constants.js';
-import { getSettings, saveCurrentPRs } from './storage.js';
+import { getSettings, saveCurrentPRs, saveDiscoveredRepos } from './storage.js';
 import { fetchAllPRs } from './github-api.js';
 import { getOpenPRUrls, addPRsToTabGroup, closeMergedPRTabs } from './tab-manager.js';
+import { getRepoFullName } from '../shared/utils.js';
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.alarms.create(ALARM_NAME, { periodInMinutes: POLL_INTERVAL_MINUTES });
@@ -33,7 +34,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 async function checkForPRs() {
-  const { githubToken, maxAgeDays, showOthersDrafts } = await getSettings();
+  const { githubToken, maxAgeDays, showOthersDrafts, excludedRepos } = await getSettings();
 
   if (!githubToken) {
     updateBadge('!', BADGE_COLORS.ERROR);
@@ -47,13 +48,27 @@ async function checkForPRs() {
     const filteredMyPRs = myPRs.filter(pr => new Date(pr.created_at).getTime() > cutoff);
     const filteredReviews = reviewRequests.filter(pr => new Date(pr.created_at).getTime() > cutoff);
 
-    const allOpenPRUrls = [...filteredMyPRs, ...filteredReviews].map(pr => pr.html_url);
+    // Discover repos from all fetched PRs and persist
+    const allFetchedPRs = [...filteredMyPRs, ...filteredReviews];
+    const repos = [...new Set(allFetchedPRs.map(pr => getRepoFullName(pr.html_url)).filter(Boolean))];
+    await saveDiscoveredRepos(repos);
+
+    // Filter out excluded repos
+    const excludedSet = new Set(excludedRepos);
+    const isRepoAllowed = (pr) => {
+      const repo = getRepoFullName(pr.html_url);
+      return !repo || !excludedSet.has(repo);
+    };
+    const allowedMyPRs = filteredMyPRs.filter(isRepoAllowed);
+    const allowedReviews = filteredReviews.filter(isRepoAllowed);
+
+    const allOpenPRUrls = [...allowedMyPRs, ...allowedReviews].map(pr => pr.html_url);
     await closeMergedPRTabs(allOpenPRUrls);
 
     const openUrls = await getOpenPRUrls();
 
-    const newMyPRs = filteredMyPRs.filter(pr => !openUrls.has(pr.html_url));
-    const newReviews = filteredReviews.filter(pr => !openUrls.has(pr.html_url));
+    const newMyPRs = allowedMyPRs.filter(pr => !openUrls.has(pr.html_url));
+    const newReviews = allowedReviews.filter(pr => !openUrls.has(pr.html_url));
 
     if (newMyPRs.length > 0) {
       await addPRsToTabGroup(newMyPRs, GROUP_MY_PRS, GROUP_COLORS[GROUP_MY_PRS]);
@@ -62,7 +77,7 @@ async function checkForPRs() {
       await addPRsToTabGroup(newReviews, GROUP_REVIEW_REQUESTS, GROUP_COLORS[GROUP_REVIEW_REQUESTS]);
     }
 
-    const allPRs = [...filteredMyPRs, ...filteredReviews];
+    const allPRs = [...allowedMyPRs, ...allowedReviews];
     await saveCurrentPRs(allPRs);
     updateBadge(allPRs.length > 0 ? String(allPRs.length) : '', BADGE_COLORS.SUCCESS);
   } catch (error) {

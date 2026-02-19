@@ -15,6 +15,8 @@
  * @property {string} [githubToken] - GitHub Personal Access Token
  * @property {number} [maxAgeDays] - Maximum age of PRs to show (default: 30)
  * @property {boolean} [showOthersDrafts] - Whether to show draft PRs from others
+ * @property {string[]} [excludedRepos] - Repos (owner/repo) the user has excluded from tracking
+ * @property {string[]} [discoveredRepos] - Repos (owner/repo) seen from fetched PRs
  */
 
 /**
