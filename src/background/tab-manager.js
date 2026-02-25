@@ -54,7 +54,7 @@ export async function addPRsToTabGroup(prs, groupName, color) {
     await chrome.tabGroups.update(groupId, {
       title: groupName,
       color,
-      collapsed: true,
     });
+    await chrome.tabGroups.update(groupId, { collapsed: true });
   }
 }
