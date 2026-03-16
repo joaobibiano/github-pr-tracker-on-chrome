@@ -33,11 +33,30 @@ export async function closeMergedPRTabs(openPRUrls) {
   }
 }
 
+async function applyGroupStyle(groupId, groupName, color) {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    await chrome.tabGroups.update(groupId, { color });
+    await chrome.tabGroups.update(groupId, { title: groupName });
+
+    const group = await chrome.tabGroups.get(groupId);
+    if (group.title === groupName && group.color === color) {
+      return;
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+}
+
 export async function addPRsToTabGroup(prs, groupName, color) {
   if (prs.length === 0) return;
 
+  // Re-check open URLs right before creating tabs to avoid duplicates
+  const alreadyOpen = await getOpenPRUrls();
+  const toOpen = prs.filter(pr => !alreadyOpen.has(normalizeUrl(pr.html_url)));
+  if (toOpen.length === 0) return;
+
   const tabs = [];
-  for (const pr of prs) {
+  for (const pr of toOpen) {
     const tab = await chrome.tabs.create({
       url: pr.html_url,
       active: false,
@@ -48,13 +67,12 @@ export async function addPRsToTabGroup(prs, groupName, color) {
   const existingGroups = await chrome.tabGroups.query({ title: groupName });
 
   if (existingGroups.length > 0) {
-    await chrome.tabs.group({ tabIds: tabs, groupId: existingGroups[0].id });
+    const groupId = existingGroups[0].id;
+    await chrome.tabs.group({ tabIds: tabs, groupId });
+    await applyGroupStyle(groupId, groupName, color);
   } else {
     const groupId = await chrome.tabs.group({ tabIds: tabs });
-    await chrome.tabGroups.update(groupId, {
-      title: groupName,
-      color,
-    });
+    await applyGroupStyle(groupId, groupName, color);
     await chrome.tabGroups.update(groupId, { collapsed: true });
   }
 }

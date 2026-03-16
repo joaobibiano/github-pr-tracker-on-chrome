@@ -9,7 +9,9 @@ import {
 import { getSettings, saveCurrentPRs, saveDiscoveredRepos } from './storage.js';
 import { fetchAllPRs } from './github-api.js';
 import { getOpenPRUrls, addPRsToTabGroup, closeMergedPRTabs } from './tab-manager.js';
-import { getRepoFullName } from '../shared/utils.js';
+import { getRepoFullName, normalizeUrl } from '../shared/utils.js';
+
+let checking = false;
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.alarms.create(ALARM_NAME, { periodInMinutes: POLL_INTERVAL_MINUTES });
@@ -34,6 +36,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 async function checkForPRs() {
+  if (checking) return;
+  checking = true;
+
+  try {
+    await doCheckForPRs();
+  } finally {
+    checking = false;
+  }
+}
+
+async function doCheckForPRs() {
   const { githubToken, maxAgeDays, showOthersDrafts, excludedRepos } = await getSettings();
 
   if (!githubToken) {
@@ -67,8 +80,8 @@ async function checkForPRs() {
 
     const openUrls = await getOpenPRUrls();
 
-    const newMyPRs = allowedMyPRs.filter(pr => !openUrls.has(pr.html_url));
-    const newReviews = allowedReviews.filter(pr => !openUrls.has(pr.html_url));
+    const newMyPRs = allowedMyPRs.filter(pr => !openUrls.has(normalizeUrl(pr.html_url)));
+    const newReviews = allowedReviews.filter(pr => !openUrls.has(normalizeUrl(pr.html_url)));
 
     if (newMyPRs.length > 0) {
       await addPRsToTabGroup(newMyPRs, GROUP_MY_PRS, GROUP_COLORS[GROUP_MY_PRS]);
