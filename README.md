@@ -1,6 +1,6 @@
 # GitHub PR Review Tracker
 
-A Chrome extension that tracks GitHub pull requests awaiting your review and organizes them in tab groups.
+A Chrome extension that keeps your open GitHub pull requests and your review requests visible by opening them into Chrome tab groups.
 
 ![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-4285F4?logo=googlechrome&logoColor=white)
 ![Manifest V3](https://img.shields.io/badge/Manifest-V3-green)
@@ -8,98 +8,117 @@ A Chrome extension that tracks GitHub pull requests awaiting your review and org
 
 ## Features
 
-- **Automatic PR Detection** - Polls GitHub every 3 minutes for PRs requiring your review
-- **Smart Tab Groups** - Automatically creates and organizes tabs into "My PRs" and "Review Requests" groups
-- **Badge Counter** - Shows the total number of active PRs at a glance
-- **Configurable Age Filter** - Hide old PRs beyond a configurable age (default: 30 days)
-- **Draft PR Control** - Option to show or hide draft PRs from others
+- Polls GitHub every 3 minutes, on browser startup, and when you click refresh in the popup
+- Tracks two PR buckets:
+  - **My PRs**: open pull requests authored by you
+  - **Review Requests**: open pull requests where your review is requested
+- Opens newly discovered PRs into Chrome tab groups named `My PRs` and `Review Requests`
+- Reuses existing groups and avoids opening duplicate tabs, including GitHub PR sub-pages such as `/files`
+- Closes stale tabs from managed groups when those PRs are no longer returned by GitHub, while leaving the active tab alone
+- Shows the total tracked PR count in the extension badge and popup
+- Lets you configure a max PR age, include or exclude draft PRs from other authors, and exclude specific repositories from tracking
 
 ## Installation
 
-1. Clone or download this repository
-2. Open Chrome and navigate to `chrome://extensions`
-3. Enable "Developer mode" in the top right
-4. Click "Load unpacked" and select the extension directory
+1. Clone or download this repository.
+2. Open `chrome://extensions` in Chrome.
+3. Enable **Developer mode**.
+4. Click **Load unpacked** and select this project directory.
 
 ## Configuration
 
-1. Click the extension icon and select "Settings" (or right-click → Options)
-2. Enter your GitHub Personal Access Token
-3. Configure optional settings:
-   - **Max PR Age** - PRs older than this will be hidden (default: 30 days)
-   - **Show draft PRs from others** - Include or exclude others' draft PRs
+1. Open the extension popup.
+2. Click **Settings**.
+3. Paste a GitHub personal access token.
+4. Optionally adjust:
+   - `Max PR Age (days)` to hide older pull requests
+   - `Show draft PRs from others` to include or exclude draft review requests
+   - Repository checkboxes to stop tracking specific repos after the extension has discovered them
+
+The settings page validates the token before saving it and immediately triggers a fresh sync.
 
 ### Creating a GitHub Token
 
-1. Go to [GitHub Settings → Developer settings → Personal access tokens](https://github.com/settings/tokens)
-2. Click "Generate new token (classic)"
-3. Give it a descriptive name (e.g., "PR Review Tracker")
-4. Select the `repo` scope
-5. Click "Generate token" and copy it to the extension settings
+1. Go to [GitHub Settings -> Developer settings -> Personal access tokens](https://github.com/settings/tokens).
+2. Create a classic token.
+3. Give it a descriptive name such as `PR Review Tracker`.
+4. Grant the `repo` scope.
+5. Copy the token into the extension settings page.
 
 ## How It Works
 
-1. The extension runs a background service worker that checks GitHub every 3 minutes
+1. The background service worker runs on install, on startup, and on a repeating Chrome alarm.
 2. It queries GitHub's search API for:
-   - PRs you authored (`is:pr author:@me is:open`)
-   - PRs where your review is requested (`is:pr user-review-requested:@me is:open`)
-3. New PRs are opened in collapsed tab groups:
-   - **My PRs** (blue) - PRs you created
-   - **Review Requests** (purple) - PRs awaiting your review
-4. The badge shows the total count of active PRs
+   - `is:open is:pr author:@me`
+   - `is:open is:pr user-review-requested:@me`
+   - When `Show draft PRs from others` is off, review requests are filtered with `draft:false`
+3. Results are filtered by max age and by any repositories you excluded in settings.
+4. The extension stores the current PR list, last check time, and discovered repositories in `chrome.storage.local`.
+5. New PRs are added to tab groups with these colors:
+   - `My PRs` in blue
+   - `Review Requests` in purple
+   - Newly created groups are collapsed, and existing groups are reused
+6. The popup shows the current tracked count and how long ago the last sync ran.
+7. If no token is configured or the GitHub request fails, the badge switches to `!`.
 
 ## Project Structure
 
-```
+```text
 github-pr-reviewer-extension/
 ├── src/
-│   ├── background/      # Service worker modules
-│   │   ├── index.js     # Event listeners, orchestration
-│   │   ├── github-api.js    # GitHub API calls
-│   │   ├── tab-manager.js   # Tab grouping logic
-│   │   └── storage.js       # Chrome storage helpers
-│   ├── popup/           # Browser action popup
-│   │   ├── popup.html
-│   │   ├── popup.js
-│   │   └── popup.css
-│   ├── options/         # Extension options page
+│   ├── background/
+│   │   ├── index.js        # Alarm wiring and sync orchestration
+│   │   ├── github-api.js   # GitHub search requests
+│   │   ├── tab-manager.js  # Tab lookup, grouping, and cleanup
+│   │   └── storage.js      # chrome.storage helpers
+│   ├── options/
 │   │   ├── options.html
-│   │   ├── options.js
-│   │   └── options.css
-│   └── shared/          # Shared utilities
+│   │   ├── options.css
+│   │   └── options.js
+│   ├── popup/
+│   │   ├── popup.html
+│   │   ├── popup.css
+│   │   └── popup.js
+│   └── shared/
 │       ├── constants.js
-│       ├── utils.js
-│       └── types.js
-├── icons/               # Extension icons
+│       ├── types.js
+│       └── utils.js
+├── icons/
 ├── manifest.json
+├── test-normalize-url.js   # Regression check for PR URL normalization
+├── CONTRIBUTING.md
 └── README.md
 ```
 
 ## Development
 
-No build step required! The extension uses vanilla JavaScript with ES modules.
+There is no build step or package install. The extension is plain JavaScript with ES modules.
 
-Run the regression check for PR URL normalization when touching tab dedupe logic:
+For code changes:
+
+1. Edit files under `src/`.
+2. Reload the extension from `chrome://extensions`.
+3. Test the relevant surface:
+   - service worker changes from the extension card's service worker inspector
+   - popup changes from the browser action popup
+   - settings changes from the options page
+
+Run the URL normalization regression check when touching PR tab dedupe behavior:
 
 ```bash
 node test-normalize-url.js
 ```
 
-1. Make changes to files in `src/`
-2. Go to `chrome://extensions`
-3. Click the refresh icon on the extension card
-4. Test your changes
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed contribution guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance.
 
 ## Privacy
 
 This extension:
-- Only communicates with GitHub's API
-- Stores your token locally in Chrome's extension storage
-- Does not collect or transmit any personal data
-- Does not track usage or analytics
+
+- Only makes read requests to GitHub's API
+- Stores the GitHub token and extension state locally in `chrome.storage.local`
+- Does not send analytics or usage telemetry anywhere else
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT. See [LICENSE](LICENSE).
