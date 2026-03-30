@@ -17,6 +17,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   document.getElementById('maxAge').value = maxAgeDays;
   document.getElementById('showOthersDrafts').checked = showOthersDrafts;
+  document.getElementById('token').addEventListener('input', clearStatus);
+  document.getElementById('maxAge').addEventListener('input', clearStatus);
+  document.getElementById('showOthersDrafts').addEventListener('change', clearStatus);
 
   renderRepoFilter(discoveredRepos, excludedRepos);
 });
@@ -25,6 +28,7 @@ document.getElementById('save').addEventListener('click', async () => {
   const token = document.getElementById('token').value.trim();
   const maxAge = parseInt(document.getElementById('maxAge').value, 10) || DEFAULT_MAX_AGE_DAYS;
   const showOthersDrafts = document.getElementById('showOthersDrafts').checked;
+  const excludedRepos = getExcludedRepos();
 
   if (!token) {
     showStatus('Please enter a token', 'error');
@@ -46,7 +50,8 @@ document.getElementById('save').addEventListener('click', async () => {
     await chrome.storage.local.set({
       githubToken: token,
       maxAgeDays: maxAge,
-      showOthersDrafts
+      showOthersDrafts,
+      excludedRepos
     });
     chrome.runtime.sendMessage({ action: 'checkNow' });
     showStatus('Settings saved successfully!', 'success');
@@ -60,6 +65,13 @@ function showStatus(message, type) {
   status.textContent = message;
   status.className = `status ${type}`;
   status.style.display = 'block';
+}
+
+function clearStatus() {
+  const status = document.getElementById('status');
+  status.textContent = '';
+  status.className = 'status';
+  status.style.display = 'none';
 }
 
 function renderRepoFilter(discoveredRepos, excludedRepos) {
@@ -83,7 +95,7 @@ function renderRepoFilter(discoveredRepos, excludedRepos) {
     checkbox.type = 'checkbox';
     checkbox.checked = !excludedSet.has(repo);
     checkbox.dataset.repo = repo;
-    checkbox.addEventListener('change', onRepoToggle);
+    checkbox.addEventListener('change', clearStatus);
 
     const name = document.createElement('span');
     name.className = 'repo-name';
@@ -95,7 +107,7 @@ function renderRepoFilter(discoveredRepos, excludedRepos) {
   }
 }
 
-async function onRepoToggle(event) {
+function getExcludedRepos() {
   const checkboxes = document.querySelectorAll('#repoList input[type="checkbox"]');
   const excluded = [];
 
@@ -105,6 +117,5 @@ async function onRepoToggle(event) {
     }
   }
 
-  await chrome.storage.local.set({ excludedRepos: excluded });
-  chrome.runtime.sendMessage({ action: 'checkNow' });
+  return excluded;
 }

@@ -81,6 +81,16 @@ button:hover {
   color: #666;
 }
 
+.hint-subtle {
+  margin-top: 8px;
+  color: #8a8a8a;
+}
+
+.hint-subtle a,
+.hint-subtle code {
+  color: inherit;
+}
+
 .hint a {
   color: #6e40c9;
 }
@@ -91,8 +101,6 @@ button:hover {
 
 .repo-filter-section {
   margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid #ddd;
 }
 
 .repo-filter-section h2 {
